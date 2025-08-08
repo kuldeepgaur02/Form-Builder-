@@ -310,7 +310,7 @@ const FieldConfigurator: React.FC<FieldConfiguratorProps> = ({
           </Typography>
           <ValidationConfig
             fieldType={fieldType}
-            rules={validationRules}
+            validationRules={validationRules} 
             onChange={setValidationRules}
           />
         </Box>
