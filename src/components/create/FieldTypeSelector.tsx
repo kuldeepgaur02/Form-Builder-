@@ -3,11 +3,11 @@ import {
   Box,
   Button,
   Typography,
-  Grid,
   Card,
   CardContent,
   CardActions,
 } from '@mui/material';
+
 import {
   TextFields,
   Numbers,
@@ -85,68 +85,94 @@ const FieldTypeSelector: React.FC<FieldTypeSelectorProps> = ({
   onSelectFieldType,
 }) => {
   return (
-    <Box>
-      <Typography variant="h6" gutterBottom sx={{ mb: 3, color: '#333' }}>
+    <Box sx={{ p: 3 }}>
+      <Typography
+        variant="h5"
+        component="h2"
+        gutterBottom
+        sx={{
+          textAlign: 'center',
+          mb: 3,
+          fontWeight: 'bold',
+          color: 'primary.main',
+        }}
+      >
         ✨ Choose Field Type
       </Typography>
       
-      <Grid container spacing={2}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(1, 1fr)',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+          },
+          gap: 3,
+        }}
+      >
         {fieldTypes.map((fieldType) => (
-          <Grid item xs={12} sm={6} md={4} key={fieldType.type}>
-            <Card
-              sx={{
-                height: '100%',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                  borderColor: fieldType.color,
-                },
-                border: '2px solid transparent',
-              }}
-              onClick={() => onSelectFieldType(fieldType.type)}
-            >
-              <CardContent sx={{ textAlign: 'center', pb: 1 }}>
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 60,
-                    height: 60,
-                    borderRadius: '50%',
-                    backgroundColor: `${fieldType.color}20`,
-                    color: fieldType.color,
-                    mb: 2,
-                  }}
-                >
-                  {fieldType.icon}
-                </Box>
-                <Typography variant="h6" component="h3" gutterBottom>
-                  {fieldType.label}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {fieldType.description}
-                </Typography>
-              </CardContent>
-              <CardActions sx={{ justifyContent: 'center', pt: 0 }}>
-                <Button
-                  size="small"
-                  sx={{
-                    color: fieldType.color,
-                    '&:hover': {
-                      backgroundColor: `${fieldType.color}10`,
-                    },
-                  }}
-                >
-                  Add Field
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
+          <Card
+            key={fieldType.type}
+            sx={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: 4,
+              },
+              border: `2px solid ${fieldType.color}20`,
+            }}
+          >
+            <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
+              <Box
+                sx={{
+                  color: fieldType.color,
+                  mb: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                {fieldType.icon}
+              </Box>
+              
+              <Typography
+                variant="h6"
+                component="h3"
+                gutterBottom
+                sx={{ fontWeight: 'bold' }}
+              >
+                {fieldType.label}
+              </Typography>
+              
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                {fieldType.description}
+              </Typography>
+            </CardContent>
+            
+            <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+              <Button
+                variant="contained"
+                onClick={() => onSelectFieldType(fieldType.type)}
+                sx={{
+                  backgroundColor: fieldType.color,
+                  '&:hover': {
+                    backgroundColor: fieldType.color,
+                    filter: 'brightness(0.9)',
+                  },
+                }}
+              >
+                Add Field
+              </Button>
+            </CardActions>
+          </Card>
         ))}
-      </Grid>
+      </Box>
     </Box>
   );
 };
