@@ -125,13 +125,7 @@ const PreviewForm: React.FC = () => {
           >
             Back to Builder
           </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleReset}
-          >
-            Reset Form
-          </Button>
+          
         </Stack>
       </Box>
 
