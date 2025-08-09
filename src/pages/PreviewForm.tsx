@@ -204,31 +204,7 @@ const PreviewForm: React.FC = () => {
         </Stack>
       </Paper>
 
-      {/* Form Data Debug (for development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Paper elevation={1} sx={{ p: 3, mt: 4, backgroundColor: '#f5f5f5' }}>
-          <Typography variant="h6" gutterBottom>
-            🐛 Debug Information
-          </Typography>
-          <Typography variant="subtitle2" gutterBottom>
-            Form Values:
-          </Typography>
-          <pre style={{ fontSize: '12px', overflow: 'auto' }}>
-            {JSON.stringify(previewValues, null, 2)}
-          </pre>
-          
-          {Object.keys(previewErrors).length > 0 && (
-            <>
-              <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-                Validation Errors:
-              </Typography>
-              <pre style={{ fontSize: '12px', overflow: 'auto', color: 'red' }}>
-                {JSON.stringify(previewErrors, null, 2)}
-              </pre>
-            </>
-          )}
-        </Paper>
-      )}
+
     </Box>
   );
 };
