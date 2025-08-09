@@ -279,78 +279,56 @@ const FieldConfigurator: React.FC<FieldConfiguratorProps> = ({
             label="Default Value"
             value={defaultValue}
             onChange={(e) => setDefaultValue(e.target.value)}
-            helperText="Value shown by default when form loads"
-            type={isNumberField ? 'number' : 'text'}
+            helperText="Optional default value for this field"
           />
         )}
 
-        <Divider />
-
         {/* Derived Field Configuration */}
         {isDerived && (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              🧮 Derived Field Configuration
-            </Typography>
-            <DerivedFieldConfig
-              currentField={field || { id: '', type: fieldType, label, required, defaultValue, placeholder, isDerived, derivedConfig, validationRules, order: 0 }}
-              allFields={allFields}
-              derivedConfig={derivedConfig}
-              onChange={setDerivedConfig}
-            />
-          </Box>
+          <DerivedFieldConfig
+            currentField={{ ...field, label, type: fieldType } as FormField}
+            allFields={allFields}
+            derivedConfig={derivedConfig}
+            onChange={setDerivedConfig}
+          />
         )}
 
         <Divider />
 
         {/* Validation Rules */}
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            ✅ Validation Rules
-          </Typography>
+        {!isDerived && (
           <ValidationConfig
             fieldType={fieldType}
-            validationRules={validationRules} 
+            validationRules={validationRules}
             onChange={setValidationRules}
           />
-        </Box>
-
-        <Divider />
+        )}
 
         {/* Action Buttons */}
-        <Stack direction="row" spacing={2} justifyContent="flex-end">
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
           <Button
+            variant="outlined"
             startIcon={<Cancel />}
             onClick={onCancel}
-            variant="outlined"
-            color="inherit"
+            size="large"
           >
             Cancel
           </Button>
           <Button
+            variant="contained"
             startIcon={<Save />}
             onClick={handleSave}
-            variant="contained"
-            color="primary"
+            size="large"
+            sx={{
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #1976D2 30%, #1BA0D2 90%)',
+              }
+            }}
           >
-            {isEditing ? 'Update Field' : 'Create Field'}
+            {isEditing ? 'Update Field' : 'Add Field'}
           </Button>
-        </Stack>
-
-        {/* Help Text */}
-        <Alert severity="info" sx={{ mt: 2 }}>
-          <Typography variant="body2">
-            <strong>💡 Tips:</strong>
-            <br />
-            • Use descriptive labels that clearly indicate what information is needed
-            <br />
-            • Set appropriate validation rules to ensure data quality
-            <br />
-            • For derived fields, make sure parent fields are created first
-            <br />
-            • Test your form after adding fields to ensure everything works as expected
-          </Typography>
-        </Alert>
+        </Box>
       </Stack>
     </Paper>
   );
