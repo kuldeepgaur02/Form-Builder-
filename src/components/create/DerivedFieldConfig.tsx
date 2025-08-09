@@ -126,7 +126,7 @@ const DerivedFieldConfig: React.FC<DerivedFieldConfigProps> = ({
           label="Formula"
           value={derivedConfig?.formula || ''}
           onChange={(e) => handleFormulaChange(e.target.value)}
-          placeholder="Enter JavaScript expression (e.g., fieldname1 + fieldname2)"
+          placeholder="Enter expression )"
           multiline
           rows={3}
           helperText="Use parent field names (without spaces) as variables in your formula"

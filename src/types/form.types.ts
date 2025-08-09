@@ -17,6 +17,7 @@ export interface DerivedFieldConfig {
   description?: string;
 }
 
+
 export interface FormField {
   id: string;
   type: FieldType;
@@ -40,7 +41,7 @@ export interface FormSchema {
   name: string;
   fields: FormField[];
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string; // Add this line
 }
 
 export interface FormValues {
@@ -57,6 +58,7 @@ export interface FormBuilderState {
     fields: FormField[];
   };
   savedForms: FormSchema[];
+  editingFormId: string | null; // Add this line
   previewValues: FormValues;
   previewErrors: FieldErrors;
   isLoading: boolean;

@@ -105,7 +105,8 @@ const PreviewForm: React.FC = () => {
     );
   }
 
-  const sortedFields = currentForm.fields.sort((a, b) => a.order - b.order);
+  // Create a copy of the array before sorting to avoid mutating Redux state
+  const sortedFields = [...currentForm.fields].sort((a, b) => a.order - b.order);
   const hasErrors = hasValidationErrors(previewErrors);
 
   return (
@@ -178,22 +179,7 @@ const PreviewForm: React.FC = () => {
             >
               Reset
             </Button>
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              startIcon={<Send />}
-              disabled={hasErrors}
-              sx={{
-                background: hasErrors 
-                  ? undefined 
-                  : 'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)',
-                '&:hover': hasErrors ? undefined : {
-                  background: 'linear-gradient(45deg, #388E3C 30%, #689F38 90%)',
-                }
-              }}
-            >
-              Submit Form
-            </Button>
+
           </Box>
           
           {hasErrors && (

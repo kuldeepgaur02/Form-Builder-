@@ -43,3 +43,12 @@ export const updateFormInStorage = (updatedForm: FormSchema): void => {
     console.error('Error updating form in localStorage:', error);
   }
 };
+
+// ADD this new function:
+export const saveFormsToStorage = (forms: FormSchema[]): void => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(forms));
+  } catch (error) {
+    console.error('Error saving forms to localStorage:', error);
+  }
+};

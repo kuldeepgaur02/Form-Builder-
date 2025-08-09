@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { FormBuilderState, FormField, FormSchema, FormValues, FieldErrors } from '../../types/form.types';
-import { saveFormToStorage, loadFormsFromStorage } from '../../utils/localStorage';
+import { saveFormToStorage, loadFormsFromStorage, saveFormsToStorage } from '../../utils/localStorage';
 import { v4 as uuidv4 } from 'uuid';
 
 const initialState: FormBuilderState = {
@@ -9,6 +9,7 @@ const initialState: FormBuilderState = {
     fields: [],
   },
   savedForms: loadFormsFromStorage(),
+  editingFormId: null, // Add this line
   previewValues: {},
   previewErrors: {},
   isLoading: false,
@@ -83,24 +84,57 @@ const formSlice = createSlice({
         name: '',
         fields: [],
       };
+      state.editingFormId = null; // Add this line
       state.error = null;
     },
     
+    // ADD this new action
+    updateExistingForm: (state, action: PayloadAction<{ id: string; name: string; fields: FormField[] }>) => {
+      const { id, name, fields } = action.payload;
+      const formIndex = state.savedForms.findIndex(f => f.id === id);
+      
+      if (formIndex !== -1) {
+        state.savedForms[formIndex] = {
+          ...state.savedForms[formIndex],
+          name,
+          fields: [...fields],
+          updatedAt: new Date().toISOString(),
+        };
+        
+        // Update localStorage with all forms
+        saveFormsToStorage(state.savedForms);
+        
+        // Clear current form and editing state
+        state.currentForm = { name: '', fields: [] };
+        state.editingFormId = null;
+        state.error = null;
+      } else {
+        state.error = 'Form not found for update';
+      }
+    },
+    
+    // UPDATE this existing action
     loadForm: (state, action: PayloadAction<string>) => {
       const form = state.savedForms.find(f => f.id === action.payload);
       if (form) {
         state.currentForm = {
           name: form.name,
-          fields: form.fields,
+          fields: [...form.fields], // Create a copy
         };
+        state.editingFormId = action.payload; // Add this line
+        state.error = null;
+      } else {
+        state.error = 'Form not found';
       }
     },
     
+    // UPDATE this existing action
     clearCurrentForm: (state) => {
       state.currentForm = {
         name: '',
         fields: [],
       };
+      state.editingFormId = null; // Add this line
       state.previewValues = {};
       state.previewErrors = {};
     },
@@ -131,6 +165,7 @@ export const {
   removeField,
   reorderFields,
   saveCurrentForm,
+  updateExistingForm, // Add this line
   loadForm,
   clearCurrentForm,
   updatePreviewValue,

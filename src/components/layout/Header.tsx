@@ -23,7 +23,7 @@ const Header: React.FC = () => {
             gap: 1
           }}
         >
-          🍳 upliance.ai Form Builder
+          🍳 Form Builder
         </Typography>
         
         <Box sx={{ display: 'flex', gap: 1 }}>

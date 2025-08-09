@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
@@ -26,6 +26,7 @@ import {
   Save,
   Clear,
   Preview,
+  Update,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../store';
@@ -35,6 +36,7 @@ import {
   removeField,
   reorderFields,
   saveCurrentForm,
+  updateExistingForm, // You'll need to add this action
   clearCurrentForm,
   setFormName,
 } from '../store/slices/formSlice';
@@ -45,40 +47,105 @@ import FieldConfigurator from '../components/create/FieldConfigurator';
 const CreateForm: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { currentForm, error } = useSelector((state: RootState) => state.form);
+  const { currentForm, error, editingFormId } = useSelector((state: RootState) => state.form);
   
   const [showFieldSelector, setShowFieldSelector] = useState(false);
   const [selectedFieldType, setSelectedFieldType] = useState<FieldType | null>(null);
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [formName, setFormNameLocal] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [fieldBeingEdited, setFieldBeingEdited] = useState<string | null>(null);
+  
+  // Check if we're editing an existing form
+  const isEditingExistingForm = !!editingFormId;
+
+  // Set form name when editing existing form
+  useEffect(() => {
+    if (isEditingExistingForm && currentForm.name) {
+      setFormNameLocal(currentForm.name);
+    } else if (!isEditingExistingForm) {
+      setFormNameLocal(''); // Clear form name when creating new form
+    }
+  }, [isEditingExistingForm, currentForm.name]);
+
+  // Reset editing states when not needed
+  useEffect(() => {
+    if (!selectedFieldType && !showFieldSelector) {
+      setEditingField(null);
+      setIsEditMode(false);
+      setFieldBeingEdited(null);
+    }
+  }, [selectedFieldType, showFieldSelector]);
 
   const handleSelectFieldType = (type: FieldType) => {
     setSelectedFieldType(type);
     setShowFieldSelector(false);
+    if (!fieldBeingEdited) {
+      setIsEditMode(false);
+    }
   };
 
   const handleSaveField = (field: FormField) => {
-    if (editingField) {
-      dispatch(updateField(field));
-      setEditingField(null);
-    } else {
-      dispatch(addField(field));
+    try {
+      if (isEditMode && editingField && fieldBeingEdited) {
+        console.log('Updating field:', { original: editingField, updated: field });
+        
+        const updatedField = { 
+          ...field, 
+          id: editingField.id,
+          order: editingField.order
+        };
+        
+        dispatch(updateField(updatedField));
+        console.log('Field update dispatched:', updatedField);
+        
+      } else {
+        console.log('Adding new field:', field);
+        dispatch(addField(field));
+      }
+
+      resetEditingState();
+      
+    } catch (error) {
+      console.error('Error saving field:', error);
+      alert('Error saving field. Please try again.');
     }
+  };
+
+  const resetEditingState = () => {
     setSelectedFieldType(null);
+    setEditingField(null);
+    setIsEditMode(false);
+    setFieldBeingEdited(null);
   };
 
   const handleCancelFieldConfig = () => {
-    setSelectedFieldType(null);
-    setEditingField(null);
+    resetEditingState();
   };
 
   const handleEditField = (field: FormField) => {
-    setEditingField(field);
+    console.log('Starting edit for field:', field);
+    
+    setEditingField({ ...field });
+    setSelectedFieldType(field.type);
+    setIsEditMode(true);
+    setFieldBeingEdited(field.id);
+    
+    console.log('Edit state set:', { 
+      fieldId: field.id, 
+      fieldType: field.type, 
+      isEditMode: true 
+    });
   };
 
   const handleDeleteField = (fieldId: string) => {
-    dispatch(removeField(fieldId));
+    if (window.confirm('Are you sure you want to delete this field?')) {
+      if (fieldBeingEdited === fieldId) {
+        resetEditingState();
+      }
+      dispatch(removeField(fieldId));
+    }
   };
 
   const handleSaveForm = () => {
@@ -91,34 +158,62 @@ const CreateForm: React.FC = () => {
 
   const confirmSaveForm = () => {
     if (formName.trim()) {
-      dispatch(saveCurrentForm(formName));
+      if (isEditingExistingForm && editingFormId) {
+        // Update existing form
+        console.log('Updating existing form with ID:', editingFormId);
+        console.log('Form data:', { name: formName.trim(), fields: currentForm.fields });
+        dispatch(updateExistingForm({ 
+          id: editingFormId, 
+          name: formName.trim(),
+          fields: currentForm.fields 
+        }));
+        alert('Form updated successfully!');
+        
+        // Navigate back to My Forms after a short delay
+        setTimeout(() => {
+          navigate('/create');
+        }, 1000);
+      } else {
+        // Create new form
+        console.log('Creating new form');
+        dispatch(saveCurrentForm(formName.trim()));
+        alert('Form saved successfully!');
+        
+        // Stay on the create form page for new forms or navigate as needed
+      }
+      
       setShowSaveDialog(false);
       setFormNameLocal('');
-      alert('Form saved successfully!');
     }
   };
 
   const handleClearForm = () => {
-    if (window.confirm('Are you sure you want to clear the form? All unsaved changes will be lost.')) {
+    const message = isEditingExistingForm 
+      ? 'Are you sure you want to clear the form? All unsaved changes will be lost.' 
+      : 'Are you sure you want to clear the form? All unsaved changes will be lost.';
+      
+    if (window.confirm(message)) {
+      resetEditingState();
       dispatch(clearCurrentForm());
     }
   };
 
-  const handlePreview = () => {
-    if (currentForm.fields.length === 0) {
-      alert('Please add at least one field before previewing');
-      return;
+  const handleCancelEdit = () => {
+    if (isEditingExistingForm) {
+      if (window.confirm('Are you sure you want to cancel editing? All unsaved changes will be lost.')) {
+        dispatch(clearCurrentForm());
+        navigate('/create');
+      }
     }
-    navigate('/preview');
   };
 
   // Show field configurator if editing or adding a new field
-  if (selectedFieldType || editingField) {
+  if (selectedFieldType) {
     return (
       <FieldConfigurator
-        field={editingField || undefined}
+        field={isEditMode && editingField ? editingField : undefined}
         allFields={currentForm.fields}
-        fieldType={selectedFieldType || editingField!.type}
+        fieldType={selectedFieldType}
         onSave={handleSaveField}
         onCancel={handleCancelFieldConfig}
       />
@@ -129,11 +224,28 @@ const CreateForm: React.FC = () => {
     <Box>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#333' }}>
-          🏗️ Form Builder
-        </Typography>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#333' }}>
+            🏗️ {isEditingExistingForm ? 'Edit Form' : 'Form Builder'}
+          </Typography>
+          {isEditingExistingForm && (
+            <Typography variant="body1" color="text.secondary">
+              Editing: {currentForm.name || 'Untitled Form'}
+            </Typography>
+          )}
+        </Box>
         
         <Stack direction="row" spacing={2}>
+          {isEditingExistingForm && (
+            <Button
+              variant="outlined"
+              onClick={handleCancelEdit}
+              color="secondary"
+            >
+              Cancel Edit
+            </Button>
+          )}
+          
           <Button
             variant="outlined"
             startIcon={<Clear />}
@@ -142,27 +254,24 @@ const CreateForm: React.FC = () => {
           >
             Clear Form
           </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Preview />}
-            onClick={handlePreview}
-            disabled={currentForm.fields.length === 0}
-          >
-            Preview
-          </Button>
+         
           <Button
             variant="contained"
-            startIcon={<Save />}
+            startIcon={isEditingExistingForm ? <Update /> : <Save />}
             onClick={handleSaveForm}
             disabled={currentForm.fields.length === 0}
             sx={{
-              background: 'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)',
+              background: isEditingExistingForm 
+                ? 'linear-gradient(45deg, #FF9800 30%, #FFB74D 90%)'
+                : 'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)',
               '&:hover': {
-                background: 'linear-gradient(45deg, #388E3C 30%, #689F38 90%)',
+                background: isEditingExistingForm
+                  ? 'linear-gradient(45deg, #F57C00 30%, #FF9800 90%)'
+                  : 'linear-gradient(45deg, #388E3C 30%, #689F38 90%)',
               }
             }}
           >
-            Save Form
+            {isEditingExistingForm ? 'Update Form' : 'Save Form'}
           </Button>
         </Stack>
       </Box>
@@ -172,6 +281,15 @@ const CreateForm: React.FC = () => {
           {error}
         </Alert>
       )}
+
+      {/* Status Alert */}
+      {isEditingExistingForm && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          You are editing an existing form. Changes will update the original form when you click "Update Form".
+        </Alert>
+      )}
+
+
 
       {/* Field List */}
       {currentForm.fields.length > 0 && (
@@ -189,6 +307,8 @@ const CreateForm: React.FC = () => {
                   variant="outlined"
                   sx={{ 
                     transition: 'all 0.2s',
+                    border: fieldBeingEdited === field.id ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                    backgroundColor: fieldBeingEdited === field.id ? '#f3f8ff' : 'white',
                     '&:hover': { 
                       boxShadow: 2,
                       borderColor: '#1976d2'
@@ -216,6 +336,9 @@ const CreateForm: React.FC = () => {
                           {field.isDerived && (
                             <Chip label="Derived" size="small" color="secondary" />
                           )}
+                          {fieldBeingEdited === field.id && (
+                            <Chip label="Editing" size="small" color="info" />
+                          )}
                         </Box>
                         
                         <Typography variant="body2" color="text.secondary">
@@ -225,7 +348,7 @@ const CreateForm: React.FC = () => {
                           }
                         </Typography>
                         
-                        {field.validationRules.length > 0 && (
+                        {field.validationRules && field.validationRules.length > 0 && (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="caption" color="text.secondary">
                               Validation rules: {field.validationRules.length}
@@ -239,6 +362,8 @@ const CreateForm: React.FC = () => {
                           onClick={() => handleEditField(field)}
                           color="primary"
                           size="small"
+                          title="Edit field"
+                          disabled={fieldBeingEdited === field.id}
                         >
                           <Edit />
                         </IconButton>
@@ -246,6 +371,8 @@ const CreateForm: React.FC = () => {
                           onClick={() => handleDeleteField(field.id)}
                           color="error"
                           size="small"
+                          title="Delete field"
+                          disabled={fieldBeingEdited === field.id}
                         >
                           <Delete />
                         </IconButton>
@@ -270,11 +397,13 @@ const CreateForm: React.FC = () => {
           }}
         >
           <Typography variant="h5" gutterBottom sx={{ color: '#666' }}>
-            🎯 Start Building Your Form
+            🎯 {isEditingExistingForm ? 'Add Fields to Your Form' : 'Start Building Your Form'}
           </Typography>
           <Typography variant="body1" paragraph sx={{ color: '#999', mb: 4 }}>
-            Add your first field to get started. You can choose from text, number, date, 
-            and many other field types.
+            {isEditingExistingForm 
+              ? 'Add fields to enhance your existing form.'
+              : 'Add your first field to get started. You can choose from text, number, date, and many other field types.'
+            }
           </Typography>
           <Button
             variant="contained"
@@ -288,7 +417,7 @@ const CreateForm: React.FC = () => {
               }
             }}
           >
-            Add First Field
+            {isEditingExistingForm ? 'Add Field' : 'Add First Field'}
           </Button>
         </Paper>
       ) : (
@@ -299,6 +428,7 @@ const CreateForm: React.FC = () => {
             onClick={() => setShowFieldSelector(true)}
             size="large"
             sx={{ minWidth: 200 }}
+            disabled={!!fieldBeingEdited}
           >
             Add Another Field
           </Button>
@@ -315,6 +445,7 @@ const CreateForm: React.FC = () => {
           display: { xs: 'flex', sm: 'none' }
         }}
         onClick={() => setShowFieldSelector(true)}
+        disabled={!!fieldBeingEdited}
       >
         <Add />
       </Fab>
@@ -335,9 +466,11 @@ const CreateForm: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Save Form Dialog */}
+      {/* Save/Update Form Dialog */}
       <Dialog open={showSaveDialog} onClose={() => setShowSaveDialog(false)}>
-        <DialogTitle>💾 Save Form</DialogTitle>
+        <DialogTitle>
+          💾 {isEditingExistingForm ? 'Update Form' : 'Save Form'}
+        </DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -350,6 +483,11 @@ const CreateForm: React.FC = () => {
             placeholder="Enter a name for your form"
             sx={{ mt: 2 }}
           />
+          {isEditingExistingForm && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              This will update the existing form with your changes.
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowSaveDialog(false)}>Cancel</Button>
@@ -358,7 +496,7 @@ const CreateForm: React.FC = () => {
             variant="contained"
             disabled={!formName.trim()}
           >
-            Save
+            {isEditingExistingForm ? 'Update' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

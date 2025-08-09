@@ -46,8 +46,10 @@ const MyForms: React.FC = () => {
     navigate('/preview');
   };
 
+  // UPDATED: This now properly sets up editing mode
   const handleEditForm = (form: FormSchema) => {
-    dispatch(loadForm(form.id));
+    console.log('Setting up edit mode for form:', form.id);
+    dispatch(loadForm(form.id)); // This now also sets editingFormId in Redux
     navigate('/create');
   };
 
@@ -64,8 +66,10 @@ const MyForms: React.FC = () => {
     navigate('/create');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  // UPDATED: Enhanced formatDate to handle updated forms
+  const formatDate = (dateString: string, isUpdated = false) => {
+    const prefix = isUpdated ? 'Updated ' : 'Created ';
+    return prefix + new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -176,8 +180,8 @@ const MyForms: React.FC = () => {
           mb: 4,
         }}
       >
-        {savedForms
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        {[...savedForms]
+          .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
           .map((form) => {
             const fieldStats = getFieldTypeStats(form);
             const derivedFieldsCount = form.fields.filter(f => f.isDerived).length;
@@ -224,10 +228,17 @@ const MyForms: React.FC = () => {
                         </Typography>
                       </Box>
                       
+                      {/* UPDATED: Enhanced date display */}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <DateRange fontSize="small" color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          Created {formatDate(form.createdAt)}
+                          {formatDate(form.createdAt)}
+                          {form.updatedAt && form.updatedAt !== form.createdAt && (
+                            <>
+                              <br />
+                              {formatDate(form.updatedAt, true)}
+                            </>
+                          )}
                         </Typography>
                       </Box>
                     </Stack>
@@ -321,7 +332,7 @@ const MyForms: React.FC = () => {
               Edit Forms
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Click "Edit" to modify existing forms. All changes are saved automatically.
+              Click "Edit" to modify existing forms. Changes will update the original form.
             </Typography>
           </Box>
           <Box
