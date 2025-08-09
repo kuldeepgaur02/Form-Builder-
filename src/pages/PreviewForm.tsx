@@ -166,13 +166,7 @@ const PreviewForm: React.FC = () => {
           
           {/* Form Actions */}
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-            <Button
-              variant="outlined"
-              onClick={handleReset}
-              startIcon={<Refresh />}
-            >
-              Reset
-            </Button>
+
 
           </Box>
           
